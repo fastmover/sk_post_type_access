@@ -34,7 +34,7 @@ class SK_PostTypeAccess {
 
     if(null == $userdata) {
 
-      $userCapabilities = self::getRoleCapabilities('anonimous');
+      $userCapabilities = self::getRoleCapabilities('anonymous');
 
     } else {
 
@@ -88,12 +88,12 @@ register_activation_hook( __FILE__, function() {
   $wp_roles = SK_PostTypeAccess::getRoles();
   $roles = array_keys($wp_roles->role_names);
 
-  if( in_array( 'anonimous', $roles ) )
+  if( in_array( 'anonymous', $roles ) )
     return;
 
   add_role(
-    'anonimous',
-    'Anonimous',
+    'anonymous',
+    'Anonymous',
     array(
       'read'              => true,
       'read_page'         => true,

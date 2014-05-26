@@ -5,10 +5,10 @@ This is a WordPress plugin to set read access restrictions to the front end of W
 
 A separate plugin is required to edit the capabilities of roles. A good plugin for this is: [Members](https://wordpress.org/plugins/members/)
 
-When enabled, this plugin will search for a role named 'anonimous', if this doesn't currently exist, it will create it.  If this plugin creates the anonimous role, it will have the folow capabilities:
+When enabled, this plugin will search for a role named 'anonymous', if this doesn't currently exist, it will create it.  If this plugin creates the anonymous role, it will have the folow capabilities:
  - read
  - read_attachment
  - read_page
  - read_post
 
-After enabling this plugin, you will want to add the read capabilities to each role for custom content types.
+After enabling this plugin, you will want to add the read capabilities to each role for custom content types. For instance, a custom post type of movie, would need read_movie capability added to roles to actually see this.

@@ -7,7 +7,7 @@ Stable tag: 0.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-This plugin locks down front end read access to all post types.  Creates an anonimous role, if one doesn't already exist;
+This plugin locks down front end read access to all post types.  Creates an anonymous role, if one doesn't already exist;
 
 == Description ==
 
