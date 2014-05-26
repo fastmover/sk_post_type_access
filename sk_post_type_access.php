@@ -160,6 +160,8 @@ class SK_PostTypeAccess {
     <div class="accordion" id="accordion">
       <?php
 
+      $usedCapabilities = array();
+
       foreach($postTypes as $postType) {
 
         ?>
@@ -187,22 +189,38 @@ class SK_PostTypeAccess {
                   foreach($postType->cap as $capability) {
 
                     if( false === strpos($capability, 'read_') ) {
+
                       continue;
-                    }
-
-                    $checked = '';
-
-                    if( in_array( $capability, $roleCapabilityKeys ) ) {
-
-                      $checked = 'checked';
 
                     }
 
-                    ?>
-                    <input type="checkbox" id="<?=$capability; ?>" name="skRoles[<?=strtolower($role['name']); ?>_<?=strtolower($postType->labels->name); ?>_<?=$capability; ?>]" value="true" <?=$checked; ?>/>
-                    <label for="<?=$capability; ?>"><?=$capability; ?></label>
-                    <br />
-                  <?php
+                    if(!in_array(strtolower($role['name']) . '_' . $capability, $usedCapabilities)) {
+
+                      $usedCapabilities[] = strtolower($role['name']) . '_' . $capability;
+                      $checked = '';
+
+                      if( in_array( $capability, $roleCapabilityKeys ) ) {
+
+                        $checked = 'checked';
+
+                      }
+
+                      ?>
+                      <input type="checkbox" id="<?=strtolower($role['name']); ?>_<?=$capability; ?>" name="skRoles[<?=strtolower($role['name']); ?>_<?=$capability; ?>]" value="checked" <?=$checked; ?>/>
+                      <input type="hidden" name="skRoles2[<?=strtolower($role['name']); ?>_<?=$capability; ?>]" value="<?=$checked; ?>"/>
+                      <label for="<?=strtolower($role['name']); ?>_<?=$capability; ?>"><?=$capability; ?></label>
+                      <br />
+                    <?php
+
+                    } else {
+
+                      ?>
+                      <?=$capability; ?><br />
+                      <?php
+
+                    }
+
+
 
                   }
 
@@ -246,6 +264,9 @@ class SK_PostTypeAccess {
     <div class="wrap">
       <h2>Post Type Access</h2>
       <form method="post" action="options.php">
+        <p>
+          Checkboxes will not appear for post types using other post types capabilities.
+        </p>
 
         <?php
 
@@ -292,19 +313,54 @@ class SK_PostTypeAccess {
 
   public static function updatePermissions() {
 
-    $allRoles = self::getRoles();
-    $allRoles = self::getRolesCapsReadOnly($allRoles);
+    $allRoles       = self::getRoles();
+    $allRoles       = self::getRolesCapsReadOnly($allRoles);
+    $roles          = $_POST['skRoles'];
+    $rolesBefore    = $_POST['skRoles2'];
+    ksort($roles);
+    ksort($rolesBefore);
 
-    $roles = $_POST['skRoles'];
-    foreach($roles as $role => $enabled) {
+    foreach($rolesBefore as $role => $enabled) {
+
+      if($enabled === "") {
+        // This role is disabled, check to see if it got enabled
+        if(array_key_exists($role, $roles)) {
+          // Enable this role
+          self::enableCapability($role);
+        }
+      } elseif( $enabled === "checked") {
+        // check to see if this was disabled
+        if(!array_key_exists($role, $roles)) {
+          self::disableCapability($role);
+        }
+      }
+
       $exploded = explode('_', $role);
       $thisRole       = array_shift($exploded);
-      $thisPostType   = array_shift($exploded);
       $capability     = implode('_', $exploded);
-//      $allRoles[$thisRole]
-      $ffff = 'ffff';
+
     }
-    $asdf = 'asdf';
+
+  }
+
+  public static function enableCapability($role) {
+
+    $exploded       = explode( '_', $role );
+    $thisRole       = array_shift( $exploded );
+    $capability     = implode( '_', $exploded );
+    $currentRole    = get_role( $thisRole );
+    $currentRole->add_cap( $capability );
+
+  }
+
+  public static function disableCapability($role) {
+
+    $exploded       = explode( '_', $role );
+    $thisRole       = array_shift( $exploded );
+    $capability     = implode( '_', $exploded );
+    $currentRole    = get_role( $thisRole );
+    $currentRole->remove_cap( $capability );
+
   }
 
 }
