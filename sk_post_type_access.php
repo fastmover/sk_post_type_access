@@ -29,7 +29,10 @@ class SK_PostTypeAccess {
 
   }
 
-  public static function post_access($query = '', $arg2 = '', $arg3 = '') {
+  public static function post_access($query = '') {
+
+    if(is_admin())
+      return;
 
     if("checked" === get_option('disable_plugin'))
       return;
@@ -39,7 +42,6 @@ class SK_PostTypeAccess {
 
     if(!$query->is_main_query())
       return;
-
 
     global $userdata; // null if not logged in
 
@@ -106,7 +108,7 @@ class SK_PostTypeAccess {
 
       add_action('admin_enqueue_scripts', function() {
 
-        wp_register_style( 'jquery-ui-css', '//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/themes/smoothness/jquery-ui.css');
+        wp_register_style( 'jquery-ui-css',  plugin_dir_url( __FILE__ ) . 'jquery-ui.css');
         wp_enqueue_style( 'jquery-ui-css' );
         wp_register_script( 'sk-post-type-access', plugin_dir_url( __FILE__ ) . 'script.js' );
 
@@ -146,6 +148,7 @@ class SK_PostTypeAccess {
       $postTypeObjects[] = get_post_type_object($pType);
 
     }
+
     return $postTypeObjects;
 
   }
@@ -300,9 +303,13 @@ class SK_PostTypeAccess {
     foreach( $roles->roles as $role ) {
 
       foreach( $role['capabilities'] as $capability => $enabled) {
+
         if( false !== strpos( $capability, 'read_' ) ) {
+
           $readOnly[$role['name']][] = $capability;
+
         }
+
       }
 
     }
@@ -323,16 +330,24 @@ class SK_PostTypeAccess {
     foreach($rolesBefore as $role => $enabled) {
 
       if($enabled === "") {
+
         // This role is disabled, check to see if it got enabled
         if(array_key_exists($role, $roles)) {
+
           // Enable this role
           self::enableCapability($role);
+
         }
+
       } elseif( $enabled === "checked") {
+
         // check to see if this was disabled
         if(!array_key_exists($role, $roles)) {
+
           self::disableCapability($role);
+
         }
+
       }
 
       $exploded = explode('_', $role);
