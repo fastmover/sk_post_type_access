@@ -3,7 +3,7 @@
  * Plugin Name: SK Post Type Access
  * Plugin URI: http://StevenKohlmeyer.com/sk_post_type_access_plugin
  * Description: This restricts content types to a specific role
- * Version: 0.0.2
+ * Version: 0.0.3
  * Author: Fastmover
  * Author URI: http://StevenKohlmeyer.com
  * License: GPLv2 or later
@@ -143,7 +143,10 @@ class SK_PostTypeAccess {
   public static function getRoleCapabilities($role) {
 
     global $wp_roles;
-    $roleCapabilities = $wp_roles->roles[strtolower($role)]['capabilities'];
+
+    $role = strtolower(str_replace(" ","_",$role));
+
+    $roleCapabilities = $wp_roles->roles[$role]['capabilities'];
 
     return $roleCapabilities;
 
@@ -224,7 +227,8 @@ class SK_PostTypeAccess {
 
   public static function listCustomPostTypes() {
 
-    $roles      = SK_PostTypeAccess::getRoles();
+    $rolesObj      = SK_PostTypeAccess::getRoles();
+    $roles = array_keys($rolesObj->roles);
     $postTypes  = SK_PostTypeAccess::getPostTypeObjects();
     $lastPostType = '';
 
@@ -244,15 +248,17 @@ class SK_PostTypeAccess {
           <div class="accordion2" id="accordion-nested">
             <?php
 
-            foreach($roles->roles as $role) {
+            foreach($roles as $role) {
 
-              $roleCapabilities   = self::getRoleCapabilities($role['name']);
+              $roleName = $rolesObj->roles[$role]['name'];
+
+              $roleCapabilities   = self::getRoleCapabilities($role);
               $roleCapabilityKeys = array_keys($roleCapabilities);
 
               ?>
 
               <h4 class="child">
-                <?=$role['name']; ?>
+                <?=$roleName; ?>
               </h4>
               <div>
                 <p>
@@ -266,9 +272,9 @@ class SK_PostTypeAccess {
 
                     }
 
-                    if(!in_array(strtolower($role['name']) . '_' . $capability, $usedCapabilities)) {
+                    if(!in_array($role . '_' . $capability, $usedCapabilities)) {
 
-                      $usedCapabilities[] = strtolower($role['name']) . '_' . $capability;
+                      $usedCapabilities[] = $role . '_' . $capability;
                       $checked = '';
 
                       if( in_array( $capability, $roleCapabilityKeys ) ) {
@@ -278,9 +284,9 @@ class SK_PostTypeAccess {
                       }
 
                       ?>
-                      <input type="checkbox" id="<?=strtolower($role['name']); ?>_<?=$capability; ?>" name="skRoles[<?=strtolower($role['name']); ?>_<?=$capability; ?>]" value="checked" <?=$checked; ?>/>
-                      <input type="hidden" name="skRoles2[<?=strtolower($role['name']); ?>_<?=$capability; ?>]" value="<?=$checked; ?>"/>
-                      <label for="<?=strtolower($role['name']); ?>_<?=$capability; ?>"><?=$capability; ?></label>
+                      <input type="checkbox" id="<?=$role; ?>_<?=$capability; ?>" name="skRoles[<?=$role; ?>_<?=$capability; ?>]" value="checked" <?=$checked; ?>/>
+                      <input type="hidden" name="skRoles2[<?=$role; ?>_<?=$capability; ?>]" value="<?=$checked; ?>"/>
+                      <label for="<?=$role; ?>_<?=$capability; ?>"><?=$capability; ?></label>
                       <br />
                     <?php
 
