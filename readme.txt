@@ -3,7 +3,7 @@ Contributors: Fastmover
 Tags: access, access restrictions, content type access, content type restrictions, read access
 Requires at least: 3.7
 Tested up to: 3.9.1
-Stable tag: 0.0.1
+Stable tag: 0.0.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,7 +11,7 @@ This plugin locks down front end read access to all post types.  Creates an anon
 
 == Description ==
 
-This plugin requires a separate plugin for modification of role capabilities.
+This plugin locks down front end post reading, so you'll need to go into the plugin options and modify capabilities on a post_type basis for each role.  After enabling this plugin, all post types will be locked down.
 
 == Installation ==
 

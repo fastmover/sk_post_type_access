@@ -3,7 +3,7 @@
  * Plugin Name: SK Post Type Access
  * Plugin URI: http://StevenKohlmeyer.com/sk_post_type_access_plugin
  * Description: This restricts content types to a specific role
- * Version: 0.0.1
+ * Version: 0.0.2
  * Author: Fastmover
  * Author URI: http://StevenKohlmeyer.com
  * License: GPLv2 or later
@@ -16,9 +16,13 @@ class SK_PostTypeAccess {
   public static $optionsPageSlug              = "sk_post_type_access_options_page";
   public static $optionPageContentTypeGroup   = "sk-role-content-type-group";
 
+  public static $userCaps = array();
+  public static $excludePostTypes = array();
+
   function __construct() {
 
-    add_action( 'pre_get_posts', 'SK_PostTypeAccess::post_access' );
+//    add_action( 'pre_get_posts',  'SK_PostTypeAccess::post_access' );
+    add_action('init', 'SK_PostTypeAccess::getUserPermissions');
 
     if ( is_admin() ){
 
@@ -27,21 +31,56 @@ class SK_PostTypeAccess {
 
     }
 
+    add_filter( 'posts_where',    'SK_PostTypeAccess::postsWhere' );
+
   }
 
-  public static function post_access($query = '') {
+  public static function test_action($arg1 = '', $arg2 = '', $arg3 = '') {
 
-    if(is_admin())
-      return;
+    return;
+
+  }
+
+  public static function postsWhere($where) {
+
+    if( is_admin() )
+      return where;
 
     if("checked" === get_option('disable_plugin'))
-      return;
+      return $where;
 
-    if( count($query->query) < 1 )
-      return;
 
-    if(!$query->is_main_query())
-      return;
+    $excludeTypes = array();
+    $postTypes = get_post_types();
+
+    foreach($postTypes as $postType) {
+
+      $pTO = get_post_type_object($postType);
+
+      if(!in_array($pTO->cap->read_post, self::$userCaps)) {
+
+        $excludeTypes[] = $postType;
+
+      }
+
+    }
+
+    self::$excludePostTypes = $excludeTypes;
+
+    $whereTypes = implode('","', $excludeTypes);
+    $whereTypes = '"' . $whereTypes . '"';
+    $where .= " AND wp_posts.post_type NOT IN (" . $whereTypes . ") ";
+    return $where;
+
+  }
+
+  public static function getUserPermissions() {
+
+    self::$userCaps = self::initUserCaps(true);
+
+  }
+
+  public static function initUserCaps($keys = false) {
 
     global $userdata; // null if not logged in
 
@@ -55,20 +94,50 @@ class SK_PostTypeAccess {
 
     }
 
-    $thisPostType = $query->query['post_type'];
+    if($keys)
+      return array_keys($userCapabilities);
+
+    return $userCapabilities;
+
+  }
+
+  public static function post_access($query = '') {
+
+    if(is_admin() || is_single())
+      return;
+
+    if("checked" === get_option('disable_plugin'))
+      return;
+
+//    if( count($query->query) < 1 )
+//      return;
+
+    if(!$query->is_main_query())
+      return;
+
+
+    if(isset($query->query['post_type'])) {
+      $thisPostType = $query->query['post_type'];
+    } else {
+
+    }
+
     $thisPostTypeReadCap = 'read_' . $thisPostType;
-    $userCapabilitiesKeys = array_keys($userCapabilities);
-    $userGranted = in_array($thisPostTypeReadCap, $userCapabilitiesKeys);
+    $userGranted = in_array($thisPostTypeReadCap, self::$userCaps);
 
     if(!$userGranted) {
 
-      $query->query['post_type'] = null;
-      $query->query_vars['post_type'] = null;
-      $query->is_404 = true;
+      self::render404();
 
     }
 
 
+  }
+
+  public static function render404() {
+      $query->query['post_type'] = null;
+      $query->query_vars['post_type'] = null;
+      $query->is_404 = true;
   }
 
   public static function getRoleCapabilities($role) {
