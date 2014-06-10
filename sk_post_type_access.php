@@ -44,7 +44,7 @@ class SK_PostTypeAccess {
   public static function postsWhere($where) {
 
     if( is_admin() )
-      return where;
+      return $where;
 
     if("checked" === get_option('disable_plugin'))
       return $where;
