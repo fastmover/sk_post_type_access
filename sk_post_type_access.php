@@ -3,7 +3,7 @@
  * Plugin Name: SK Post Type Access
  * Plugin URI: http://StevenKohlmeyer.com/sk_post_type_access_plugin
  * Description: This restricts content types to a specific role
- * Version: 0.0.4
+ * Version: 0.0.6
  * Author: Fastmover
  * Author URI: http://StevenKohlmeyer.com
  * License: GPLv2 or later
@@ -71,7 +71,7 @@ class SK_PostTypeAccess {
     if(count($excludeTypes) < 1) {
       return $where;
     }
-    
+
     $whereTypes = implode('","', $excludeTypes);
     $whereTypes = '"' . $whereTypes . '"';
     $where .= " AND wp_posts.post_type NOT IN (" . $whereTypes . ") ";
