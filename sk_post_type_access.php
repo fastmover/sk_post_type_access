@@ -56,8 +56,9 @@ class SK_PostTypeAccess {
     foreach($postTypes as $postType) {
 
       $pTO = get_post_type_object($postType);
+      $read_cap = $pTO->cap->read_post;
 
-      if(!in_array($pTO->cap->read_post, self::$userCaps)) {
+      if(!in_array($read_cap, self::$userCaps)) {
 
         $excludeTypes[] = $postType;
 
@@ -67,6 +68,10 @@ class SK_PostTypeAccess {
 
     self::$excludePostTypes = $excludeTypes;
 
+    if(count($excludeTypes) < 1) {
+      return $where;
+    }
+    
     $whereTypes = implode('","', $excludeTypes);
     $whereTypes = '"' . $whereTypes . '"';
     $where .= " AND wp_posts.post_type NOT IN (" . $whereTypes . ") ";
