@@ -36,6 +36,10 @@ class SK_PostTypeAccess {
 
     if( !is_admin() ) {
       add_filter( 'posts_where',    'SK_PostTypeAccess::postsWhere' );
+      add_filter( 'wp_page_menu', 'SK_PostTypeAccess::navMenuFilter' );
+//      add_filter( 'wp_page_menu_args', 'SK_PostTypeAccess::navMenuFilter' );
+////      add_filter( 'pre_wp_nav_menu', 'SK_PostTypeAccess::navMenuFilter' );
+//      add_filter( 'wp_nav_menu_args', 'SK_PostTypeAccess::navMenuFilter' );
     }
 
   }
@@ -46,15 +50,39 @@ class SK_PostTypeAccess {
 
   }
 
+  public static function navMenuFilter($arg1 = '', $arg2 = '') {
+
+//    $menus = get_registered_nav_menus();
+//
+//    foreach ( $menus as $location => $description ) {
+//
+////      echo $location . ': ' . $description . '<br />';
+//
+//      $asdf = $location;
+//      $fdsa = $description;
+//
+//    }
+
+//    $theme_location = $arg1['theme_location'];
+
+//    $thisMenu = wp_nav_menu(array('theme_location' => $theme_location));
+
+//    wp_page_menu();
+
+    $test = 'test';
+
+
+
+
+    return $arg1;
+
+  }
+
   public static function postsWhere($where) {
 
     if( ("checked" === get_option('disable_plugin'))  ) {
       return $where;
     }
-
-
-
-
 
     $excludeTypes = array();
     $postTypes = get_post_types();
