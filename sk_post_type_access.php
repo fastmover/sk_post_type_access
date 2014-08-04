@@ -8,49 +8,83 @@
  * Author URI: http://StevenKohlmeyer.com
  * License: GPLv2 or later
  */
-
 /*
  * Fatal error: Call to a member function add_cap() on a non-object in /home/fastmover/stevenkohlmeyer.com/wp-content/plugins/sk-post-type-access/sk_post_type_access.php on line 447
  */
 
 
-class SK_PostTypeAccess {
+class SK_PostTypeAccess
+{
 
-  public static $optionsPageSlug              = "sk_post_type_access_options_page";
-  public static $optionPageContentTypeGroup   = "sk-role-content-type-group";
+    public static $optionsPageSlug = "sk_post_type_access_options_page";
+    public static $optionPageContentTypeGroup = "sk-role-content-type-group";
 
-  public static $userCaps = array();
-  public static $excludePostTypes = array();
+    public static $userCaps = array();
+    public static $excludePostTypes = array();
 
-  function __construct() {
+    function __construct()
+    {
 
 //    add_action( 'pre_get_posts',  'SK_PostTypeAccess::post_access' );
-    add_action('init', 'SK_PostTypeAccess::getUserPermissions');
+        add_action( 'init', 'SK_PostTypeAccess::getUserPermissions' );
 
-    if ( is_admin() ){
+        if ( is_admin() ) {
 
-      add_action( 'admin_init',       'SK_PostTypeAccess::registerSettings' );
-      add_action( 'admin_menu',       'SK_PostTypeAccess::adminMenu' );
+            add_action( 'admin_init', 'SK_PostTypeAccess::registerSettings' );
+            add_action( 'admin_menu', 'SK_PostTypeAccess::adminMenu' );
 
-    }
+        }
 
-    if( !is_admin() ) {
-      add_filter( 'posts_where',    'SK_PostTypeAccess::postsWhere' );
-      add_filter( 'wp_page_menu', 'SK_PostTypeAccess::navMenuFilter' );
+        if ( ! is_admin() ) {
+            add_filter( 'posts_where', 'SK_PostTypeAccess::postsWhere' );
+            add_filter( 'wp_page_menu', 'SK_PostTypeAccess::navMenuFilter' );
+            add_filter( 'wp_nav_menu_args', 'SK_PostTypeAccess::customNavWalker', 10, 2 );
+
+
+//            add_filter( 'walker_nav_menu_start_el', 'SK_PostTypeAccess::customNavWalker2', 10, 2 );
+
 //      add_filter( 'wp_page_menu_args', 'SK_PostTypeAccess::navMenuFilter' );
 ////      add_filter( 'pre_wp_nav_menu', 'SK_PostTypeAccess::navMenuFilter' );
 //      add_filter( 'wp_nav_menu_args', 'SK_PostTypeAccess::navMenuFilter' );
+        }
+
     }
 
-  }
+    public static function  customNavWalker( $args )
+    {
+        $thisNavWalker = new Walker_Nav_Menu_Post_Type_Permissions();
 
-  public static function test_action($arg1 = '', $arg2 = '', $arg3 = '') {
+//        return array_merge( $args, array('walker' => $thisNavWalker));
+//        return array_merge( $args, array('walker' => $thisPageWalker));
 
-    return;
+        if($args['walker'] === "") {
 
-  }
+            // This code works for no menu's set, defaults to populating menus with pages...
+            $thisPageWalker = new Walker_Page_Menu_Post_Type_Permissions();
+            $args['walker'] = $thisPageWalker;
 
-  public static function navMenuFilter($arg1 = '', $arg2 = '') {
+        } else {
+
+        }
+
+        return $args;
+//        return 'Walker_Nav_Menu_Post_Type_Permissions';
+    }
+
+    function customNavWalker2( $walker = '', $menu_id = '', $arg3 = '' )
+    {
+        return 'Walker_Nav_Menu_Post_Type_Permissions';
+    }
+
+    public static function test_action( $arg1 = '', $arg2 = '', $arg3 = '' )
+    {
+
+        return;
+
+    }
+
+    public static function navMenuFilter( $arg1 = '', $arg2 = '' )
+    {
 
 //    $menus = get_registered_nav_menus();
 //
@@ -69,413 +103,516 @@ class SK_PostTypeAccess {
 
 //    wp_page_menu();
 
-    $test = 'test';
+        $test = 'test';
 
 
-
-
-    return $arg1;
-
-  }
-
-  public static function postsWhere($where) {
-
-    if( ("checked" === get_option('disable_plugin'))  ) {
-      return $where;
-    }
-
-    $excludeTypes = array();
-    $postTypes = get_post_types();
-
-    foreach($postTypes as $postType) {
-
-      $pTO = get_post_type_object($postType);
-      $read_cap = $pTO->cap->read_post;
-
-      if(!in_array($read_cap, self::$userCaps)) {
-
-        $excludeTypes[] = $postType;
-
-      }
+        return $arg1;
 
     }
 
-    self::$excludePostTypes = $excludeTypes;
+    public static function postsWhere( $where )
+    {
 
-    if(count($excludeTypes) < 1) {
-      return $where;
-    }
+        if ( ( "checked" === get_option( 'disable_plugin' ) ) ) {
+            return $where;
+        }
 
-    global $wpdb;
-    $whereTypes = implode('","', $excludeTypes);
-    $whereTypes = '"' . $whereTypes . '"';
-    $where .= " AND {$wpdb->posts}.post_type NOT IN (" . $whereTypes . ") ";
-    return $where;
+        $excludeTypes = array();
+        $postTypes    = get_post_types();
 
-  }
+        foreach ( $postTypes as $postType ) {
 
-  public static function getUserPermissions() {
+            $pTO      = get_post_type_object( $postType );
+            $read_cap = $pTO->cap->read_post;
 
-    self::$userCaps = self::initUserCaps(true);
+            if ( ! in_array( $read_cap, self::$userCaps ) ) {
 
-  }
+                $excludeTypes[ ] = $postType;
 
-  public static function initUserCaps($keys = false) {
+            }
 
-    global $userdata; // null if not logged in
+        }
 
-    if(null == $userdata) {
+        self::$excludePostTypes = $excludeTypes;
 
-      $userCapabilities = self::getRoleCapabilities('anonymous');
+        if ( count( $excludeTypes ) < 1 ) {
+            return $where;
+        }
 
-    } else {
+        global $wpdb;
+        $whereTypes = implode( '","', $excludeTypes );
+        $whereTypes = '"' . $whereTypes . '"';
+        $where .= " AND {$wpdb->posts}.post_type NOT IN (" . $whereTypes . ") ";
 
-      $userCapabilities = $userdata->allcaps;
-
-    }
-
-    if($keys)
-      return array_keys($userCapabilities);
-
-    return $userCapabilities;
-
-  }
-
-  public static function getRoleCapabilities($role) {
-
-    global $wp_roles;
-
-    $role = strtolower(str_replace(" ","_",$role));
-
-    $roleCapabilities = $wp_roles->roles[$role]['capabilities'];
-
-    return $roleCapabilities;
-
-  }
-
-  public static function getRoles() {
-
-    global $wp_roles;
-
-    if ( ! isset( $wp_roles ) )
-
-      $wp_roles = new WP_Roles();
-
-    return $wp_roles;
-
-  }
-
-  public static function registerSettings() {
-
-    register_setting( SK_PostTypeAccess::$optionPageContentTypeGroup, 'disable_plugin' );
-
-    if(isset($_POST['option_page']) and SK_PostTypeAccess::$optionPageContentTypeGroup === $_POST['option_page'] and "update" === $_POST['action'] ) {
-      self::updatePermissions();
-    }
-
-    global $plugin_page;
-
-    $asdf = 'asdf';
-
-    if($plugin_page == SK_PostTypeAccess::$optionsPageSlug) {
-
-      add_action('admin_enqueue_scripts', function() {
-
-        wp_register_style( 'jquery-ui-css',  plugin_dir_url( __FILE__ ) . 'jquery-ui.css');
-        wp_enqueue_style( 'jquery-ui-css' );
-        wp_register_script( 'sk-post-type-access', plugin_dir_url( __FILE__ ) . 'script.js' );
-
-        wp_enqueue_script('jquery');
-        wp_enqueue_script('jquery-ui-core');
-        wp_enqueue_script('jquery-ui-widget');
-        wp_enqueue_script('jquery-ui-accordion');
-        wp_enqueue_script('sk-post-type-access');
-
-      });
-
+        return $where;
 
     }
 
+    public static function getUserPermissions()
+    {
 
-  }
-
-  public static function adminMenu() {
-
-    add_users_page(
-      'Post Type Access',
-      'Post Type Access',
-      'activate_plugins',
-      SK_PostTypeAccess::$optionsPageSlug,
-      'SK_PostTypeAccess::optionsPage'
-    );
-
-  }
-
-  public static function getPostTypeObjects() {
-
-    global $optionsPageSlug;
-    $postTypes = get_post_types();
-    $postTypeObjects = array();
-    foreach($postTypes as $postType => $pType) {
-
-      $postTypeObjects[] = get_post_type_object($pType);
+        self::$userCaps = self::initUserCaps( true );
 
     }
 
-    return $postTypeObjects;
+    public static function initUserCaps( $keys = false )
+    {
 
-  }
+        global $userdata; // null if not logged in
 
-  public static function listCustomPostTypes() {
+        if ( null == $userdata ) {
 
-    $rolesObj      = SK_PostTypeAccess::getRoles();
-    $roles = array_keys($rolesObj->roles);
-    $postTypes  = SK_PostTypeAccess::getPostTypeObjects();
-    $lastPostType = '';
+            $userCapabilities = self::getRoleCapabilities( 'anonymous' );
 
-    ?>
-    <div class="accordion" id="accordion">
-      <?php
+        } else {
 
-      $usedCapabilities = array();
+            $userCapabilities = $userdata->allcaps;
 
-      foreach($postTypes as $postType) {
+        }
+
+        if ( $keys )
+            return array_keys( $userCapabilities );
+
+        return $userCapabilities;
+
+    }
+
+    public static function getRoleCapabilities( $role )
+    {
+
+        global $wp_roles;
+
+        $role = strtolower( str_replace( " ", "_", $role ) );
+
+        $roleCapabilities = $wp_roles->roles[ $role ][ 'capabilities' ];
+
+        return $roleCapabilities;
+
+    }
+
+    public static function getRoles()
+    {
+
+        global $wp_roles;
+
+        if ( ! isset( $wp_roles ) )
+
+            $wp_roles = new WP_Roles();
+
+        return $wp_roles;
+
+    }
+
+    public static function registerSettings()
+    {
+
+        register_setting( SK_PostTypeAccess::$optionPageContentTypeGroup, 'disable_plugin' );
+
+        if ( isset( $_POST[ 'option_page' ] ) and SK_PostTypeAccess::$optionPageContentTypeGroup === $_POST[ 'option_page' ] and "update" === $_POST[ 'action' ] ) {
+            self::updatePermissions();
+        }
+
+        global $plugin_page;
+
+        $asdf = 'asdf';
+
+        if ( $plugin_page == SK_PostTypeAccess::$optionsPageSlug ) {
+
+            add_action(
+                'admin_enqueue_scripts', function () {
+
+                    wp_register_style( 'jquery-ui-css', plugin_dir_url( __FILE__ ) . 'jquery-ui.css' );
+                    wp_enqueue_style( 'jquery-ui-css' );
+                    wp_register_script( 'sk-post-type-access', plugin_dir_url( __FILE__ ) . 'script.js' );
+
+                    wp_enqueue_script( 'jquery' );
+                    wp_enqueue_script( 'jquery-ui-core' );
+                    wp_enqueue_script( 'jquery-ui-widget' );
+                    wp_enqueue_script( 'jquery-ui-accordion' );
+                    wp_enqueue_script( 'sk-post-type-access' );
+
+                }
+            );
+
+
+        }
+
+
+    }
+
+    public static function adminMenu()
+    {
+
+        add_users_page(
+            'Post Type Access',
+            'Post Type Access',
+            'activate_plugins',
+            SK_PostTypeAccess::$optionsPageSlug,
+            'SK_PostTypeAccess::optionsPage'
+        );
+
+    }
+
+    public static function getPostTypeObjects()
+    {
+
+        global $optionsPageSlug;
+        $postTypes       = get_post_types();
+        $postTypeObjects = array();
+        foreach ( $postTypes as $postType => $pType ) {
+
+            $postTypeObjects[ ] = get_post_type_object( $pType );
+
+        }
+
+        return $postTypeObjects;
+
+    }
+
+    public static function listCustomPostTypes()
+    {
+
+        $rolesObj     = SK_PostTypeAccess::getRoles();
+        $roles        = array_keys( $rolesObj->roles );
+        $postTypes    = SK_PostTypeAccess::getPostTypeObjects();
+        $lastPostType = '';
 
         ?>
-        <h3 class="parent">
-          <?=$postType->labels->name; ?>
-        </h3>
-        <div>
-          <div class="accordion2" id="accordion-nested">
+        <div class="accordion" id="accordion">
             <?php
 
-            foreach($roles as $role) {
+            $usedCapabilities = array();
 
-              $roleName = $rolesObj->roles[$role]['name'];
+            foreach ( $postTypes as $postType ) {
 
-              $roleCapabilities   = self::getRoleCapabilities($role);
-              $roleCapabilityKeys = array_keys($roleCapabilities);
+                ?>
+                <h3 class="parent">
+                    <?= $postType->labels->name; ?>
+                </h3>
+                <div>
+                    <div class="accordion2" id="accordion-nested">
+                        <?php
 
-              ?>
+                        foreach ( $roles as $role ) {
 
-              <h4 class="child">
-                <?=$roleName; ?>
-              </h4>
-              <div>
-                <p>
-                  <?php
+                            $roleName = $rolesObj->roles[ $role ][ 'name' ];
 
-                  foreach($postType->cap as $capability) {
+                            $roleCapabilities   = self::getRoleCapabilities( $role );
+                            $roleCapabilityKeys = array_keys( $roleCapabilities );
 
-                    if( false === strpos($capability, 'read_') ) {
+                            ?>
 
-                      continue;
+                            <h4 class="child">
+                                <?= $roleName; ?>
+                            </h4>
+                            <div>
+                                <p>
+                                    <?php
 
-                    }
+                                    foreach ( $postType->cap as $capability ) {
 
-                    if(!in_array($role . '_' . $capability, $usedCapabilities)) {
+                                        if ( false === strpos( $capability, 'read_' ) ) {
 
-                      $usedCapabilities[] = $role . '_' . $capability;
-                      $checked = '';
+                                            continue;
 
-                      if( in_array( $capability, $roleCapabilityKeys ) ) {
+                                        }
 
-                        $checked = 'checked';
+                                        if ( ! in_array( $role . '_' . $capability, $usedCapabilities ) ) {
 
-                      }
+                                            $usedCapabilities[ ] = $role . '_' . $capability;
+                                            $checked             = '';
 
-                      ?>
-                      <input type="checkbox" id="<?=$role; ?>_<?=$capability; ?>" name="skRoles[<?=$role; ?>_<?=$capability; ?>]" value="checked" <?=$checked; ?>/>
-                      <input type="hidden" name="skRoles2[<?=$role; ?>_<?=$capability; ?>]" value="<?=$checked; ?>"/>
-                      <label for="<?=$role; ?>_<?=$capability; ?>"><?=$capability; ?></label>
-                      <br />
-                    <?php
+                                            if ( in_array( $capability, $roleCapabilityKeys ) ) {
 
-                    } else {
+                                                $checked = 'checked';
 
-                      ?>
-                      <?=$capability; ?><br />
-                      <?php
+                                            }
 
-                    }
+                                            ?>
+                                            <input type="checkbox" id="<?= $role; ?>_<?= $capability; ?>"
+                                                   name="skRoles[<?= $role; ?>_<?= $capability; ?>]"
+                                                   value="checked" <?= $checked; ?>/>
+                                            <input type="hidden" name="skRoles2[<?= $role; ?>_<?= $capability; ?>]"
+                                                   value="<?= $checked; ?>"/>
+                                            <label for="<?= $role; ?>_<?= $capability; ?>"><?= $capability; ?></label>
+                                            <br/>
+                                        <?php
+
+                                        } else {
+
+                                            ?>
+                                            <?= $capability; ?><br/>
+                                        <?php
+
+                                        }
 
 
+                                    }
 
-                  }
+                                    ?>
+                                </p>
+                            </div>
 
-                  ?>
-                </p>
-              </div>
+                        <?php
 
+                        }
+
+                        ?>
+                    </div>
+                </div>
             <?php
 
             }
 
             ?>
-          </div>
         </div>
-        <?php
-
-      }
-
-      ?>
-    </div>
     <?php
 
-  }
-
-  public static function optionsPage($arg1 = '', $arg2 = '', $arg3 = '') {
-
-    if(!is_admin()) {
-
-      return;
-
     }
+
+    public static function optionsPage( $arg1 = '', $arg2 = '', $arg3 = '' )
+    {
+
+        if ( ! is_admin() ) {
+
+            return;
+
+        }
 
 //    $roleNames = getAllRoles();
 
 
+        // get_role( $role );
 
-    // get_role( $role );
-
-    // http://codex.wordpress.org/Creating_Options_Pages
-    ?>
-    <div class="wrap">
-      <h2>Post Type Access</h2>
-      <form method="post" action="options.php">
-        <p>
-          Checkboxes will not appear for post types using other post types capabilities.
-        </p>
-
-        <?php
-
-        settings_fields( SK_PostTypeAccess::$optionPageContentTypeGroup );
-        do_settings_sections( SK_PostTypeAccess::$optionPageContentTypeGroup );
-
-        SK_PostTypeAccess::listCustomPostTypes();
-
+        // http://codex.wordpress.org/Creating_Options_Pages
         ?>
-        <br />
-        <br />
+        <div class="wrap">
+            <h2>Post Type Access</h2>
 
-        <table class="form-table">
-          <tr valign="top">
-            <th scope="row">Disable Plugin</th>
-            <td><input type="checkbox" name="disable_plugin" value="checked" <?=get_option('disable_plugin'); ?>/></td>
-          </tr>
-        </table>
+            <form method="post" action="options.php">
+                <p>
+                    Checkboxes will not appear for post types using other post's capabilities.
+                </p>
 
-        <?php submit_button(); ?>
+                <?php
 
-      </form>
-    </div>
-  <?php
-  }
+                settings_fields( SK_PostTypeAccess::$optionPageContentTypeGroup );
+                do_settings_sections( SK_PostTypeAccess::$optionPageContentTypeGroup );
 
-  public static function getRolesCapsReadOnly($roles) {
+                SK_PostTypeAccess::listCustomPostTypes();
 
-    $readOnly = array();
+                ?>
+                <br/>
+                <br/>
 
-    foreach( $roles->roles as $role ) {
+                <table class="form-table">
+                    <tr valign="top">
+                        <th scope="row">Disable Plugin</th>
+                        <td><input type="checkbox" name="disable_plugin"
+                                   value="checked" <?= get_option( 'disable_plugin' ); ?>/></td>
+                    </tr>
+                </table>
 
-      foreach( $role['capabilities'] as $capability => $enabled) {
+                <?php submit_button(); ?>
 
-        if( false !== strpos( $capability, 'read_' ) ) {
+            </form>
+        </div>
+    <?php
+    }
 
-          $readOnly[$role['name']][] = $capability;
+    public static function getRolesCapsReadOnly( $roles )
+    {
+
+        $readOnly = array();
+
+        foreach ( $roles->roles as $role ) {
+
+            foreach ( $role[ 'capabilities' ] as $capability => $enabled ) {
+
+                if ( false !== strpos( $capability, 'read_' ) ) {
+
+                    $readOnly[ $role[ 'name' ] ][ ] = $capability;
+
+                }
+
+            }
 
         }
 
-      }
+        return $readOnly;
 
     }
 
-    return $readOnly;
+    public static function updatePermissions()
+    {
 
-  }
+        $allRoles    = self::getRoles();
+        $allRoles    = self::getRolesCapsReadOnly( $allRoles );
+        $roles       = $_POST[ 'skRoles' ];
+        $rolesBefore = $_POST[ 'skRoles2' ];
+        ksort( $roles );
+        ksort( $rolesBefore );
 
-  public static function updatePermissions() {
+        foreach ( $rolesBefore as $role => $enabled ) {
 
-    $allRoles       = self::getRoles();
-    $allRoles       = self::getRolesCapsReadOnly($allRoles);
-    $roles          = $_POST['skRoles'];
-    $rolesBefore    = $_POST['skRoles2'];
-    ksort($roles);
-    ksort($rolesBefore);
+            if ( $enabled === "" ) {
 
-    foreach($rolesBefore as $role => $enabled) {
+                // This role is disabled, check to see if it got enabled
+                if ( array_key_exists( $role, $roles ) ) {
 
-      if($enabled === "") {
+                    // Enable this role
+                    self::enableCapability( $role );
 
-        // This role is disabled, check to see if it got enabled
-        if(array_key_exists($role, $roles)) {
+                }
 
-          // Enable this role
-          self::enableCapability($role);
+            } elseif ( $enabled === "checked" ) {
+
+                // check to see if this was disabled
+                if ( ! array_key_exists( $role, $roles ) ) {
+
+                    self::disableCapability( $role );
+
+                }
+
+            }
+
+            $exploded   = explode( '_', $role );
+            $thisRole   = array_shift( $exploded );
+            $capability = implode( '_', $exploded );
 
         }
-
-      } elseif( $enabled === "checked") {
-
-        // check to see if this was disabled
-        if(!array_key_exists($role, $roles)) {
-
-          self::disableCapability($role);
-
-        }
-
-      }
-
-      $exploded = explode('_', $role);
-      $thisRole       = array_shift($exploded);
-      $capability     = implode('_', $exploded);
 
     }
 
-  }
+    public static function enableCapability( $role )
+    {
 
-  public static function enableCapability($role) {
+        $exploded    = explode( '_', $role );
+        $thisRole    = array_shift( $exploded );
+        $capability  = implode( '_', $exploded );
+        $currentRole = get_role( $thisRole );
+        $currentRole->add_cap( $capability );
 
-    $exploded       = explode( '_', $role );
-    $thisRole       = array_shift( $exploded );
-    $capability     = implode( '_', $exploded );
-    $currentRole    = get_role( $thisRole );
-    $currentRole->add_cap( $capability );
+    }
 
-  }
+    public static function disableCapability( $role )
+    {
 
-  public static function disableCapability($role) {
+        $exploded    = explode( '_', $role );
+        $thisRole    = array_shift( $exploded );
+        $capability  = implode( '_', $exploded );
+        $currentRole = get_role( $thisRole );
+        $currentRole->remove_cap( $capability );
 
-    $exploded       = explode( '_', $role );
-    $thisRole       = array_shift( $exploded );
-    $capability     = implode( '_', $exploded );
-    $currentRole    = get_role( $thisRole );
-    $currentRole->remove_cap( $capability );
-
-  }
+    }
 
 }
 
 $SK_PTA = new SK_PostTypeAccess();
 
-register_activation_hook( __FILE__, function() {
+class Walker_Nav_Menu_Post_Type_Permissions extends Walker_Nav_Menu
+{
 
-  $wp_roles = SK_PostTypeAccess::getRoles();
-  $roles = array_keys($wp_roles->role_names);
+    function start_lvl( &$output, $depth = 0, $args = Array() ) {
+        parent::start_lvl($output, $depth,$args);
+    }
 
-  if( in_array( 'anonymous', $roles ) )
-    return;
+    function end_lvl( &$output, $depth = 0, $args = Array() ) {
+        parent::end_lvl($output, $depth,$args);
+    }
 
-  add_role(
-    'anonymous',
-    'Anonymous',
-    array(
-      'read'              => true,
-      'read_page'         => true,
-      'read_post'         => true,
-      'read_attachment'   => true
-    )
-  );
+    function end_el( &$output, $item, $depth = 0, $args = Array() ) {
+        parent::end_el($output, $item, $depth, $args);
+    }
 
-});
+    function start_el( &$output, $item, $depth = 0, $args = Array(), $id = 0 )
+    {
+
+        global $SK_PTA;
+//        if ( current_user_can( 'administrator' ) )
+//        {
+//            parent::start_el( &$output, $item, $depth, $args );
+//        }
+
+
+        $pTO      = get_post_type_object( $item->post_type );
+        $read_cap = $pTO->cap->read_post;
+
+        if ( in_array( $read_cap, $SK_PTA::$userCaps ) ) {
+
+//            $excludeTypes[ ] = $postType;
+
+            $args = (object) $args;
+//            parent::start_el( $output, $item, $depth, $args, $id );
+
+        } else {
+            $test = 'asdf';
+            $output = '';
+        }
+
+        $test = $output;
+
+    }
+}
+
+class Walker_Page_Menu_Post_Type_Permissions extends Walker_Page
+{
+
+    function start_lvl( &$output, $depth = 0, $args = Array() ) {
+        parent::start_lvl($output, $depth,$args);
+    }
+
+    function end_lvl( &$output, $depth = 0, $args = Array() ) {
+        parent::end_lvl($output, $depth,$args);
+    }
+
+    function end_el( &$output, $item, $depth = 0, $args = Array() ) {
+        parent::end_el($output, $item, $depth, $args);
+    }
+
+    function start_el( &$output, $item, $depth = 0, $args = Array(), $id = 0 )
+    {
+
+        global $SK_PTA;
+        $pTO      = get_post_type_object( $item->post_type );
+        $read_cap = $pTO->cap->read_post;
+
+        if ( in_array( $read_cap, $SK_PTA::$userCaps ) ) {
+//            $args = (object) $args;
+            parent::start_el( $output, $item, $depth, $args, $id );
+        } else {
+            $test = 'asdf';
+//            $output = '';
+        }
+
+        $test = $output;
+
+    }
+}
+
+
+
+
+register_activation_hook(
+    __FILE__, function () {
+
+        $wp_roles = SK_PostTypeAccess::getRoles();
+        $roles    = array_keys( $wp_roles->role_names );
+
+        if ( in_array( 'anonymous', $roles ) )
+            return;
+
+        add_role(
+            'anonymous',
+            'Anonymous',
+            array(
+                'read'            => true,
+                'read_page'       => true,
+                'read_post'       => true,
+                'read_attachment' => true
+            )
+        );
+
+    }
+);
 
