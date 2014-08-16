@@ -8,10 +8,6 @@
  * Author URI: http://StevenKohlmeyer.com
  * License: GPLv2 or later
  */
-/*
- * Fatal error: Call to a member function add_cap() on a non-object in /home/fastmover/stevenkohlmeyer.com/wp-content/plugins/sk-post-type-access/sk_post_type_access.php on line 447
- */
-
 
 class SK_PostTypeAccess
 {
@@ -35,40 +31,37 @@ class SK_PostTypeAccess
 
         }
 
-        if ( ! is_admin() ) {
+        if ( ! is_admin() and (get_option( 'disable_plugin' ) !== "checked") ) {
+
             add_filter( 'posts_where', 'SK_PostTypeAccess::postsWhere' );
             add_filter( 'wp_page_menu', 'SK_PostTypeAccess::navMenuFilter' );
             add_filter( 'wp_nav_menu_args', 'SK_PostTypeAccess::customNavWalker', 10, 2 );
 
-
-//            add_filter( 'walker_nav_menu_start_el', 'SK_PostTypeAccess::customNavWalker2', 10, 2 );
-
-//      add_filter( 'wp_page_menu_args', 'SK_PostTypeAccess::navMenuFilter' );
-////      add_filter( 'pre_wp_nav_menu', 'SK_PostTypeAccess::navMenuFilter' );
-//      add_filter( 'wp_nav_menu_args', 'SK_PostTypeAccess::navMenuFilter' );
         }
 
     }
 
     public static function  customNavWalker( $args )
     {
-        $thisNavWalker = new Walker_Nav_Menu_Post_Type_Permissions();
-
-//        return array_merge( $args, array('walker' => $thisNavWalker));
-//        return array_merge( $args, array('walker' => $thisPageWalker));
 
         if($args['walker'] === "") {
 
-            // This code works for no menu's set, defaults to populating menus with pages...
-            $thisPageWalker = new Walker_Page_Menu_Post_Type_Permissions();
-            $args['walker'] = $thisPageWalker;
+            // No menu set, this defaults to wp_list_pages
 
+            // Check if user has permission to view pages, if not, display no menu.
+
+            if ( ! in_array( 'read_page', self::$userCaps ) ) {
+
+                $args['items_wrap'] = "";
+
+            }
         } else {
 
+            $thisNavWalker = new Walker_Nav_Menu_Post_Type_Permissions();
+            $args['walker'] = $thisNavWalker;
         }
 
         return $args;
-//        return 'Walker_Nav_Menu_Post_Type_Permissions';
     }
 
     function customNavWalker2( $walker = '', $menu_id = '', $arg3 = '' )
@@ -76,32 +69,8 @@ class SK_PostTypeAccess
         return 'Walker_Nav_Menu_Post_Type_Permissions';
     }
 
-    public static function test_action( $arg1 = '', $arg2 = '', $arg3 = '' )
-    {
-
-        return;
-
-    }
-
     public static function navMenuFilter( $arg1 = '', $arg2 = '' )
     {
-
-//    $menus = get_registered_nav_menus();
-//
-//    foreach ( $menus as $location => $description ) {
-//
-////      echo $location . ': ' . $description . '<br />';
-//
-//      $asdf = $location;
-//      $fdsa = $description;
-//
-//    }
-
-//    $theme_location = $arg1['theme_location'];
-
-//    $thisMenu = wp_nav_menu(array('theme_location' => $theme_location));
-
-//    wp_page_menu();
 
         $test = 'test';
 
@@ -416,6 +385,19 @@ class SK_PostTypeAccess
                 <?php submit_button(); ?>
 
             </form>
+
+            <?php
+
+            $menus = get_registered_nav_menus();
+
+            foreach ( $menus as $location => $description ) {
+
+                echo $location . ': ' . $description . '<br />';
+                echo has_nav_menu($location) . "<br />";
+            }
+
+
+            ?>
         </div>
     <?php
     }
@@ -529,11 +511,6 @@ class Walker_Nav_Menu_Post_Type_Permissions extends Walker_Nav_Menu
     {
 
         global $SK_PTA;
-//        if ( current_user_can( 'administrator' ) )
-//        {
-//            parent::start_el( &$output, $item, $depth, $args );
-//        }
-
 
         $pTO      = get_post_type_object( $item->post_type );
         $read_cap = $pTO->cap->read_post;
@@ -554,44 +531,6 @@ class Walker_Nav_Menu_Post_Type_Permissions extends Walker_Nav_Menu
 
     }
 }
-
-class Walker_Page_Menu_Post_Type_Permissions extends Walker_Page
-{
-
-    function start_lvl( &$output, $depth = 0, $args = Array() ) {
-        parent::start_lvl($output, $depth,$args);
-    }
-
-    function end_lvl( &$output, $depth = 0, $args = Array() ) {
-        parent::end_lvl($output, $depth,$args);
-    }
-
-    function end_el( &$output, $item, $depth = 0, $args = Array() ) {
-        parent::end_el($output, $item, $depth, $args);
-    }
-
-    function start_el( &$output, $item, $depth = 0, $args = Array(), $id = 0 )
-    {
-
-        global $SK_PTA;
-        $pTO      = get_post_type_object( $item->post_type );
-        $read_cap = $pTO->cap->read_post;
-
-        if ( in_array( $read_cap, $SK_PTA::$userCaps ) ) {
-//            $args = (object) $args;
-            parent::start_el( $output, $item, $depth, $args, $id );
-        } else {
-            $test = 'asdf';
-//            $output = '';
-        }
-
-        $test = $output;
-
-    }
-}
-
-
-
 
 register_activation_hook(
     __FILE__, function () {
