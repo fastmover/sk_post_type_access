@@ -50,15 +50,41 @@ class SK_PostTypeAccess
 
             // Check if user has permission to view pages, if not, display no menu.
 
-            if ( ! in_array( 'read_page', self::$userCaps ) ) {
+            if ( ! $args['menu'] && $args['theme_location'] && ( $locations = get_nav_menu_locations() ) && isset( $locations[ $args['theme_location'] ] ) ) {
+                $menu = wp_get_nav_menu_object( $locations[ $args['theme_location'] ] );
+                $menuItems = wp_get_nav_menu_items($menu);
+            } else {
+                $menuItems = wp_get_nav_menu_items($args['menu']);
+            }
 
-                $args['items_wrap'] = "";
+
+            // Test is a menu is set to this location
+            if( !$menu ) {
+
+                // No menu set, - this falls back to wp_list_pages / Page_Walker - shows only pages
+
+                // Test if user has access to read pages
+                if ( ! in_array( 'read_page', self::$userCaps ) ) {
+
+                    // User doesn't have access to read pages, hide / disable this menu
+//                $args['items_wrap'] = "";
+                    $args['fallback_cb'] = "";
+
+                }
+
+            } else {
+
+                $thisNavWalker = new Walker_Nav_Menu_Post_Type_Permissions();
+                $args['walker'] = $thisNavWalker;
 
             }
+
+
+
         } else {
 
-            $thisNavWalker = new Walker_Nav_Menu_Post_Type_Permissions();
-            $args['walker'] = $thisNavWalker;
+//            $thisNavWalker = new Walker_Nav_Menu_Post_Type_Permissions();
+//            $args['walker'] = $thisNavWalker;
         }
 
         return $args;
@@ -512,22 +538,23 @@ class Walker_Nav_Menu_Post_Type_Permissions extends Walker_Nav_Menu
 
         global $SK_PTA;
 
-        $pTO      = get_post_type_object( $item->post_type );
-        $read_cap = $pTO->cap->read_post;
+        $thisPost   = get_post($item->object_id);
+        $pTO        = get_post_type_object( $thisPost->post_type );
+        $read_cap   = $pTO->cap->read_post;
 
-        if ( in_array( $read_cap, $SK_PTA::$userCaps ) ) {
-
-//            $excludeTypes[ ] = $postType;
-
-            $args = (object) $args;
-//            parent::start_el( $output, $item, $depth, $args, $id );
-
+        if($thisPost->post_type === "nav_menu_item" and $item->type !== "taxonomy" and $item->type === "custom") {
+            $asdf = 'asdf';
         } else {
-            $test = 'asdf';
-            $output = '';
+
+            if ( in_array( $read_cap, $SK_PTA::$userCaps ) ) {
+
+                $args = (object) $args;
+                parent::start_el( $output, $item, $depth, $args, $id );
+
+            }
+
         }
 
-        $test = $output;
 
     }
 }
