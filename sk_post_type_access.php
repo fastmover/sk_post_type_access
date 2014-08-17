@@ -3,7 +3,7 @@
  * Plugin Name: SK Post Type Access
  * Plugin URI: http://StevenKohlmeyer.com/sk_post_type_access_plugin
  * Description: This restricts access to content types and menu links to those content types by role
- * Version: 0.0.8
+ * Version: 0.0.9
  * Author: Fastmover
  * Author URI: http://StevenKohlmeyer.com
  * License: GPLv2 or later
