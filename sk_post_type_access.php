@@ -411,18 +411,6 @@ class SK_PostTypeAccess
 
             </form>
 
-            <?php
-
-            $menus = get_registered_nav_menus();
-
-            foreach ( $menus as $location => $description ) {
-
-                echo $location . ': ' . $description . '<br />';
-                echo has_nav_menu($location) . "<br />";
-            }
-
-
-            ?>
         </div>
     <?php
     }
