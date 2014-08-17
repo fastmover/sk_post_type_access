@@ -2,8 +2,8 @@
 /**
  * Plugin Name: SK Post Type Access
  * Plugin URI: http://StevenKohlmeyer.com/sk_post_type_access_plugin
- * Description: This restricts content types to a specific role
- * Version: 0.0.7
+ * Description: This restricts access to content types and menu links to those content types by role
+ * Version: 0.0.8
  * Author: Fastmover
  * Author URI: http://StevenKohlmeyer.com
  * License: GPLv2 or later
@@ -67,7 +67,6 @@ class SK_PostTypeAccess
                 if ( ! in_array( 'read_page', self::$userCaps ) ) {
 
                     // User doesn't have access to read pages, hide / disable this menu
-//                $args['items_wrap'] = "";
                     $args['fallback_cb'] = "";
 
                 }
