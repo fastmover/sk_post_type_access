@@ -50,6 +50,8 @@ class SK_PostTypeAccess
 
             // Check if user has permission to view pages, if not, display no menu.
 
+            $menu = false;
+
             if ( ! $args['menu'] && $args['theme_location'] && ( $locations = get_nav_menu_locations() ) && isset( $locations[ $args['theme_location'] ] ) ) {
                 $menu = wp_get_nav_menu_object( $locations[ $args['theme_location'] ] );
                 $menuItems = wp_get_nav_menu_items($menu);
@@ -59,7 +61,7 @@ class SK_PostTypeAccess
 
 
             // Test is a menu is set to this location
-            if( !$menu ) {
+            if( ! $menu ) {
 
                 // No menu set, - this falls back to wp_list_pages / Page_Walker - shows only pages
 
@@ -220,10 +222,13 @@ class SK_PostTypeAccess
                     wp_register_script( 'sk-post-type-access', plugin_dir_url( __FILE__ ) . 'script.js' );
 
                     wp_enqueue_script( 'jquery' );
+                    wp_enqueue_script( 'jquery-effects-core' );
                     wp_enqueue_script( 'jquery-ui-core' );
                     wp_enqueue_script( 'jquery-ui-widget' );
                     wp_enqueue_script( 'jquery-ui-accordion' );
                     wp_enqueue_script( 'sk-post-type-access' );
+
+                    wp_enqueue_style('jqueryUIcss');
 
                 }
             );
@@ -260,6 +265,75 @@ class SK_PostTypeAccess
         }
 
         return $postTypeObjects;
+
+    }
+
+    public static function outputUserCapabilities() {
+
+
+
+    }
+
+    public static function outputPostTypeRolesCapabilities() {
+
+    }
+
+    public static function listAllUsers() {
+
+        $users = get_users();
+//        var_dump($users);
+
+        ?>
+        <div class="accordion" id="accordion">
+        <?php
+
+        foreach( $users as $user ) {
+
+            ?>
+            <h3 class="parent">
+                <?= $user->data->user_nicename; ?> (<?= $user->data->user_login; ?>)
+            </h3>
+            <div>
+                <?php self::echoUserCaps( $user ); ?>
+            </div>
+            <?php
+
+        }
+
+        ?>
+        </div>
+        <?php
+
+    }
+
+    public static function echoUserCaps( $user ) {
+
+        $userCaps = $user->allcaps;
+
+        $checked = true;
+
+        foreach( $userCaps as $cap => $checked ) {
+
+            if( $checked ) {
+                $checked = "checked";
+            } else {
+                $checked = "";
+            }
+
+            $frontEndID = $user->ID . "__" . $cap;
+
+            ?>
+            <div class="capability">
+                <input type="checkbox" id="<?= $frontEndID  ?>"
+                       name="skUsers[<?= $frontEndID; ?>]"
+                       value="checked" <?= $checked; ?>/>
+                <input type="hidden" name="skUsers2[<?= $frontEndID; ?>]"
+                       value="<?= $checked; ?>"/>
+                <label for="<?= $frontEndID; ?>"><?= $cap; ?></label>
+            </div>
+            <?php
+
+        }
 
     }
 
@@ -392,13 +466,25 @@ class SK_PostTypeAccess
 
                 settings_fields( SK_PostTypeAccess::$optionPageContentTypeGroup );
                 do_settings_sections( SK_PostTypeAccess::$optionPageContentTypeGroup );
-
-                SK_PostTypeAccess::listCustomPostTypes();
-
                 ?>
+                <h3>Post Type Read Access by Roles</h3>
+                <div class="roles">
+                    <?php
+                    SK_PostTypeAccess::listCustomPostTypes();
+                    ?>
+                </div>
                 <br/>
                 <br/>
 
+                <h3>Users Capabilities</h3>
+                <div class="users">
+                    <?php
+
+
+                        SK_PostTypeAccess::listAllUsers();
+                    ?>
+                </div>
+                <br />
                 <table class="form-table">
                     <tr valign="top">
                         <th scope="row">Disable Plugin</th>
@@ -413,6 +499,27 @@ class SK_PostTypeAccess
 
         </div>
     <?php
+
+        SK_PostTypeAccess::adminCSS();
+
+    }
+
+    public static function adminCSS() {
+
+        ?>
+        <style type="text/css">
+            .capability {
+                float: left;
+                width: 20%;
+            }
+            @media(max-width: 800px) {
+                .capability {
+                    width: 33.3%;
+                }
+            }
+        </style>
+<?php
+
     }
 
     public static function getRolesCapsReadOnly( $roles )
