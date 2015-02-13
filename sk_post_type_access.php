@@ -7,6 +7,7 @@
  * Author: Fastmover
  * Author URI: http://StevenKohlmeyer.com
  * License: GPLv2 or later
+ * Text Domain: sk-pta
  */
 
 class SK_PostTypeAccess
@@ -243,8 +244,8 @@ class SK_PostTypeAccess
     {
 
         add_users_page(
-            'Post Type Access',
-            'Post Type Access',
+            __( 'Post Type Access', 'sk-pta' ),
+            __( 'Post Type Access', 'sk-pta' ),
             'activate_plugins',
             SK_PostTypeAccess::$optionsPageSlug,
             'SK_PostTypeAccess::optionsPage'
@@ -455,11 +456,11 @@ class SK_PostTypeAccess
         // http://codex.wordpress.org/Creating_Options_Pages
         ?>
         <div class="wrap">
-            <h2>Post Type Access</h2>
+            <h2><?= __( 'Post Type Access', 'sk-pta' ); ?></h2>
 
             <form method="post" action="options.php">
                 <p>
-                    Checkboxes will not appear for post types using other post's capabilities.
+                    <?= __( "Checkboxes will not appear for post types using other post's capabilities.", 'sk-pta' ); ?>
                 </p>
 
                 <?php
@@ -467,7 +468,7 @@ class SK_PostTypeAccess
                 settings_fields( SK_PostTypeAccess::$optionPageContentTypeGroup );
                 do_settings_sections( SK_PostTypeAccess::$optionPageContentTypeGroup );
                 ?>
-                <h3>Post Type Read Access by Roles</h3>
+                <h3><?= __( "Post Type Read Access by Roles", 'sk-pta' ); ?></h3>
                 <div class="roles">
                     <?php
                     SK_PostTypeAccess::listCustomPostTypes();
@@ -476,7 +477,7 @@ class SK_PostTypeAccess
                 <br/>
                 <br/>
 
-                <h3>Users Capabilities</h3>
+                <h3><?= __( "Users Capabilities", 'sk-pta' ); ?></h3>
                 <div class="users">
                     <?php
 
@@ -487,7 +488,7 @@ class SK_PostTypeAccess
                 <br />
                 <table class="form-table">
                     <tr valign="top">
-                        <th scope="row">Disable Plugin</th>
+                        <th scope="row"><?= __( "Disable Plugin", 'sk-pta' ); ?></th>
                         <td><input type="checkbox" name="disable_plugin"
                                    value="checked" <?= get_option( 'disable_plugin' ); ?>/></td>
                     </tr>
